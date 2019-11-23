@@ -1,0 +1,18 @@
+{
+    "name": "irc-framework",
+    "version": "4.5.2",
+    "description": "A better IRC framework for node.js",
+
+    "dependencies": {
+        "irc-framework": "^4.5.2"
+    },
+
+    "keywords": [
+        "IRC",
+        "bot",
+        "messaging",
+        "proxy"
+    ],
+
+    "license": "MIT"
+}

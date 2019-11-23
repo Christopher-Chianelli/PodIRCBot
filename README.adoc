@@ -1,0 +1,15 @@
+= PodIRCBot - A modular, containerized, IRC Bot
+
+== What is it?
+
+_PodIRCBot_ is an IRC bot that runs in a kubernetes pod. Each different that
+the bot provides, such as quotes of the day and event planning, are performed
+in their own containers, independent of one another. The containers
+gets IRC messages and events via standard input, and responds by writing
+to standard output.
+
+== Components
+
+. *IRCProxy* - connects to the IRC server and forwards messages from
+the server to each service as JSON, and forwards commands from each service
+to the IRC server.
