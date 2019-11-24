@@ -1,0 +1,4 @@
+= Python Service Template
+
+To create your service, add your service logic to the corresponding
+methods in main.py

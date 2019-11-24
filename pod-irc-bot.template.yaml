@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-irc-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-irc-bot
+  template:
+    metadata:
+      labels:
+        app: pod-irc-bot
+    spec:
+      containers:
+#TEMPLATE_START
+#      - name: $service
+#        image: image-registry.openshift-image-registry.svc:5000/pod-irc-bot/$service:latest
+#        envFrom:
+#          - configMapRef:
+#              name: $service-configmap
+#          - configMapRef:
+#              name: services-configmap
+#TEMPLATE_END
