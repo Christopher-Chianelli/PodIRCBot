@@ -4,6 +4,7 @@
 oc scale --replicas=0 deployment pod-irc-bot
 SERVICE_TEMPLATE=`cat pod-irc-bot.template.yaml | perl -ne '(/#TEMPLATE_START/../#TEMPLATE_END/) && print' | perl -pe 's/.*(#TEMPLATE_START.*)/$1/' | perl -pe 's/(.*#TEMPLATE_END).*/$1/' | sed '1d; $d; s/^ *//' | sed 's/#//' | tr '\n' '&'`
 POD_CONFIG=`tr '\n' '&' < pod-irc-bot.template.yaml`
+echo -n "botConfigs=[" > services-configmap.properties
 tmpfile=$(mktemp /tmp/pod-irc-bot-build.XXXXXX)
 swapfile=$(mktemp /tmp/pod-irc-bot-build.XXXXXX)
 echo "$POD_CONFIG" > $tmpfile
@@ -33,7 +34,12 @@ do
     then
         oc apply -f $service/service.yaml
     fi
+    if [ -f "$service/bot-info.json" ]
+    then
+       sed -e 's/^ *//' < "$service/bot-info.json" | tr -d '\n' >> services-configmap.properties
+    fi
 done
+echo "]" >> services-configmap.properties
 oc create configmap services-configmap --from-env-file services-configmap.properties
 oc create configmap services-configmap --from-env-file services-configmap.properties -o yaml --dry-run | kubectl replace -f -
 cat $tmpfile | tr '&' '\n' > pod-irc-bot.yaml

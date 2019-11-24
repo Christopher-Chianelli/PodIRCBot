@@ -1,3 +1,4 @@
 **/secrets.properties
-pod-irc-bot.yaml
+/services-configmap.properties
+/pod-irc-bot.yaml
 .buildtime
