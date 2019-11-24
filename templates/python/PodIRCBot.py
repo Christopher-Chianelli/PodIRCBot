@@ -1,7 +1,13 @@
+import sys, json
+
 def respond(event, msg):
     command = {
-        "bot": event.bot,
-        "channel": event.channel,
-        "msg", msg
+        "type": event.get("type"),
+        "bot": event.get("bot"),
+        "channel": event.get("channel"),
+        "msg": event.get("msg")
     }
-    print(command)
+    print(json.dumps(command))
+
+def log(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)

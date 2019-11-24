@@ -16,7 +16,9 @@ eventHandlers = {
 }
 
 if __name__ == "__main__":
+    PodIRCBot.log("Service is waiting for messages")
     for json_message in sys.stdin:
+        PodIRCBot.log("Got event: " + json_message)
         event = json.loads(json_message)
-        eventHandler = eventHandlers.get(event.type, lambda: None);
+        eventHandler = eventHandlers.get(event.get("type"), lambda e: None);
         eventHandler(event)

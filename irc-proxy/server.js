@@ -11,9 +11,13 @@ function verifyBotConfig(botConfig) {
     return out;
 }
 
+function sendEventToSocket(socket, myEvent) {
+    socket.write(JSON.stringify(myEvent) + "\n");
+}
+
 function crash(msg) {
     console.log(msg);
-    //process.exit(1);
+    process.exit(1);
 }
 
 var ircServer = process.env.ircServer;
@@ -45,9 +49,7 @@ for (const botConfig of botConfigs) {
 
 var socketList = [];
 const server = net.createServer(function(socket) {
-	socket.on('connect', () => {
-        socketList.push(socket);
-    });
+    var backlog = '';
     socket.on('close', () => {
         var index = socketList.indexOf(socket);
         if (index > -1) {
@@ -55,11 +57,42 @@ const server = net.createServer(function(socket) {
         }
     });
     socket.on('data', (data) => {
-        const dataString = data.toString('utf8');
-        console.log(dataString);
-        socket.write(dataString);
+        backlog += data
+        var n = backlog.indexOf('\n')
+        // got a \n? emit one or more 'line' events
+        while (~n) {
+            socket.emit('line', backlog.substring(0, n))
+            backlog = backlog.substring(n + 1)
+            n = backlog.indexOf('\n')
+        }
     });
+    socket.on('line', (line) => {
+        try {
+            const dataJson = JSON.parse(line);
+            if (dataJson && typeof dataJson === "object") {
+                console.log(dataJson);
+                sendEventToSocket(socket, dataJson);
+            }
+            else {
+                throw new Error('JSON is not an object');
+            }
+        } catch (e) {
+            console.log("Got invalid JSON: " + line);
+        }
+    });
+
+    console.log("New Connection!");
+    socketList.push(socket);
+    var msg = {
+        type: "channel",
+        bot: "MyBot",
+        channel: "#thefoobar",
+        msg: "Hello world"
+    };
+    sendEventToSocket(socket, msg);
 });
 
-server.listen(8888, '127.0.0.1');
-console.log('TCP Server Started');
+server.on('listening', () => {
+    console.log('TCP Server Started');
+});
+server.listen(parseInt(process.env.IRC_PROXY_SERVICE_PORT));
