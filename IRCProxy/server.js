@@ -1,3 +1,5 @@
+const net = require('net');
+
 function verifyBotConfig(botConfig) {
     var out = [];
     if (botConfig.botName === "undefined") {
@@ -11,7 +13,7 @@ function verifyBotConfig(botConfig) {
 
 function crash(msg) {
     console.log(msg);
-    process.exit(1);
+    //process.exit(1);
 }
 
 var ircServer = process.env.ircServer;
@@ -40,3 +42,24 @@ for (const botConfig of botConfigs) {
             `following properties: ${JSON.stringify(errors)}.`);
     }
 }
+
+var socketList = [];
+const server = net.createServer(function(socket) {
+	socket.on('connect', () => {
+        socketList.push(socket);
+    });
+    socket.on('close', () => {
+        var index = socketList.indexOf(socket);
+        if (index > -1) {
+            socketList.splice(index, 1);
+        }
+    });
+    socket.on('data', (data) => {
+        const dataString = data.toString('utf8');
+        console.log(dataString);
+        socket.write(dataString);
+    });
+});
+
+server.listen(8888, '127.0.0.1');
+console.log('TCP Server Started');

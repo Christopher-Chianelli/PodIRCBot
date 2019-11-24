@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-irc-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-irc-bot
+  template:
+    metadata:
+      labels:
+        app: pod-irc-bot
+    spec:
+      containers:
+      - name: irc-proxy
+        image: image-registry.openshift-image-registry.svc:5000/pod-irc-bot/irc-proxy:latest
+        envFrom:
+          - configMapRef:
+              name: services-configmap
+          - configMapRef:
+              name: irc-proxy-configmap
+        ports:
+          - containerPort: 8888
