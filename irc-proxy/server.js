@@ -35,18 +35,30 @@ if (ircServer === undefined) {
 if (ircPort === undefined) {
     crash("ircPort is undefined");
 }
-if (botConfigs.length === 0) {
+if (botConfigs.length === 1) {
     crash("botConfigs is empty");
 }
 
-for (const botConfig of botConfigs) {
+var bots = new Map();
+for (const botConfig of botConfigs.slice(1)) {
     var errors = verifyBotConfig(botConfig);
     if (errors.length > 0) {
         crash(`botConfig ${JSON.stringify(botConfig)} is missing the ` +
             `following properties: ${JSON.stringify(errors)}.`);
     }
+    
+    if (bots.has(botConfig.botName)) {
+        var botInfo = bots.get(botConfig.botName);
+        botConfig.botChannels.filter(c => botInfo.botChannels.indexOf(c) === -1).forEach(c => botInfo.botChannels.push(c));
+    }
+    else {
+        bots.set(botConfig.botName, botConfig);
+    }
 }
 
+bots.forEach(botConfig => {
+    console.log(JSON.stringify(botConfig));
+});
 var socketList = [];
 const server = net.createServer(function(socket) {
     var backlog = '';
@@ -70,8 +82,8 @@ const server = net.createServer(function(socket) {
         try {
             const dataJson = JSON.parse(line);
             if (dataJson && typeof dataJson === "object") {
-                console.log(dataJson);
-                sendEventToSocket(socket, dataJson);
+                // console.log(dataJson);
+                // sendEventToSocket(socket, dataJson);
             }
             else {
                 throw new Error('JSON is not an object');
@@ -83,13 +95,6 @@ const server = net.createServer(function(socket) {
 
     console.log("New Connection!");
     socketList.push(socket);
-    var msg = {
-        type: "channel",
-        bot: "MyBot",
-        channel: "#thefoobar",
-        msg: "Hello world"
-    };
-    sendEventToSocket(socket, msg);
 });
 
 server.on('listening', () => {
