@@ -5,7 +5,7 @@ def respond(event, msg):
         "type": event.get("type"),
         "bot": event.get("bot"),
         "channel": event.get("channel"),
-        "msg": event.get("msg")
+        "msg": msg
     }
     print(json.dumps(command))
 

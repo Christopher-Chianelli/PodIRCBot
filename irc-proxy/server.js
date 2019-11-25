@@ -73,27 +73,34 @@ const server = net.createServer(function(socket) {
         var n = backlog.indexOf('\n')
         // got a \n? emit one or more 'line' events
         while (~n) {
-            socket.emit('line', backlog.substring(0, n))
+            var line = backlog.substring(0, n);
+            try {
+                const dataJson = JSON.parse(line);
+                if (dataJson && typeof dataJson === "object") {
+                    socket.emit('service-command', dataJson);
+                }
+                else {
+                    throw new Error('JSON is not an object');
+                }
+            } catch (e) {
+                console.log("Got invalid JSON: " + line);
+            }
             backlog = backlog.substring(n + 1)
             n = backlog.indexOf('\n')
         }
     });
-    socket.on('line', (line) => {
-        try {
-            const dataJson = JSON.parse(line);
-            if (dataJson && typeof dataJson === "object") {
-                // console.log(dataJson);
-                // sendEventToSocket(socket, dataJson);
-            }
-            else {
-                throw new Error('JSON is not an object');
-            }
-        } catch (e) {
-            console.log("Got invalid JSON: " + line);
-        }
+    socket.on('service-command', (command) => {
+        console.log("Got command " + JSON.stringify(command) + " from " + socket.remoteAddress);
     });
 
     console.log("New Connection!");
+    var myEvent = {
+        type: "channelMsg",
+        bot: "Bot",
+        channel: "#channel",
+        msg: "Hi from the server!"
+    };
+    sendEventToSocket(socket, myEvent);
     socketList.push(socket);
 });
 
