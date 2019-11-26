@@ -44,11 +44,6 @@ do
     fi
     echo "&$SERVICE_TEMPLATE" | cat $tmpfile - | sed s/'$service'/"$service"/g > $swapfile
     cp $swapfile $tmpfile
-    if [ "$service" == "irc-proxy" ]
-    then
-        echo "    network_mode: host&" >> $swapfile
-        cp $swapfile $tmpfile
-    fi
     if [ -f "$service/container-config-addon.yaml" ]
     then
         SERVICE_PROPERTY=${service^^}

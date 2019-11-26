@@ -3,6 +3,7 @@ services:
 #TEMPLATE_START
 #  $service.docker-compose.svc.cluster.local:
 #    image: pod-irc-bot/$service:latest
+#    network_mode: host
 #    env_file:
 #    - $service/configmap.properties
 #    - services-configmap.properties

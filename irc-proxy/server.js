@@ -57,10 +57,27 @@ for (const botConfig of botConfigs.slice(1)) {
     }
 }
 
+var socketList = [];
 bots.forEach(botConfig => {
-    console.log(`Server: ${ircServer}, Port: ${ircPort}`);
-
     var bot = new Irc.Client();
+    bot.use((c, rawEvents, parsedEvents) => {
+        parsedEvents.use((command, event, client, next) => {
+            // Two commands are sent for channels and private messages:
+            // message and privmsg, and it always happens
+            if (command !== "privmsg") {
+                const type = (command === "message")? (event.target === botConfig.botName)? "privateMessage" : "channelMsg"  : command;
+                const myEvent = {
+                    ...event,
+                    bot: botConfig.botName,
+                    type: type
+                };
+                socketList.forEach(socket => {
+                    sendEventToSocket(socket, myEvent);
+                });
+            }
+            next();
+        });
+    });
     bot.connect({
         host: ircServer,
         port: ircPort,
@@ -73,8 +90,9 @@ bots.forEach(botConfig => {
         console.log(`Bot ${botConfig.botName} has registered`);
         botConfig.botChannels.forEach(channel => bot.join(channel));
     });
+
 });
-var socketList = [];
+
 const server = net.createServer(function(socket) {
     var backlog = '';
     socket.on('close', () => {
@@ -107,15 +125,6 @@ const server = net.createServer(function(socket) {
     socket.on('service-command', (command) => {
         console.log("Got command " + JSON.stringify(command) + " from " + socket.remoteAddress);
     });
-
-    console.log("New Connection!");
-    var myEvent = {
-        type: "channelMsg",
-        bot: "Bot",
-        channel: "#channel",
-        msg: "Hi from the server!"
-    };
-    sendEventToSocket(socket, myEvent);
     socketList.push(socket);
 });
 
