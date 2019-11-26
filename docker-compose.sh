@@ -65,5 +65,5 @@ echo "]" >> services-configmap.properties
 cat $tmpfile | tr '&' '\n' > docker-compose.pod-irc-bot.yaml
 rm $tmpfile
 
-$COMPOSE -f docker-compose.pod-irc-bot.yaml up
+$COMPOSE -f docker-compose.pod-irc-bot.yaml up -d
 echo "Build Successful!"
