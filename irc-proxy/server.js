@@ -1,4 +1,5 @@
 const net = require('net');
+const Irc = require('irc-framework');
 
 function verifyBotConfig(botConfig) {
     var out = [];
@@ -57,7 +58,21 @@ for (const botConfig of botConfigs.slice(1)) {
 }
 
 bots.forEach(botConfig => {
-    console.log(JSON.stringify(botConfig));
+    console.log(`Server: ${ircServer}, Port: ${ircPort}`);
+
+    var bot = new Irc.Client();
+    bot.connect({
+        host: ircServer,
+        port: ircPort,
+        nick: botConfig.botName,
+        username: botConfig.botName,
+        gecos: botConfig.botName
+    });
+
+    bot.on('registered', () => {
+        console.log(`Bot ${botConfig.botName} has registered`);
+        botConfig.botChannels.forEach(channel => bot.join(channel));
+    });
 });
 var socketList = [];
 const server = net.createServer(function(socket) {
