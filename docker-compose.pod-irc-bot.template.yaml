@@ -1,0 +1,10 @@
+version: "3"
+services:
+#TEMPLATE_START
+#  $service.docker-compose.svc.cluster.local:
+#    image: pod-irc-bot/$service:latest
+#    env_file:
+#    - $service/configmap.properties
+#    - services-configmap.properties
+#    - docker-compose.properties
+#TEMPLATE_END
