@@ -13,11 +13,19 @@ to standard output.
 First, create your services by running `./create-service.sh`, following the instructions in
 the template's README.
 
-Second, `oc login` into your OpenShift account or into Red Hat's Code Ready Containers.
+Then to run your service, use one of the two methods:
 
-Third, `oc new-project YOUR_PROJECT_NAME_HERE`
+=== Docker Compose/Podman Compose
 
-Finally, run `./install.sh`; your IRC bot will be ready when the script finishes.
+Run `./docker-compose.sh`.
+
+=== Openshift
+
+. `oc login` into your OpenShift account or into Red Hat's Code Ready Containers.
+
+. `oc new-project YOUR_PROJECT_NAME_HERE`
+
+. `./install.sh`; your IRC bot will be ready when the script finishes.
 
 == Components
 

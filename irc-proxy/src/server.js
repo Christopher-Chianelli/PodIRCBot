@@ -16,6 +16,16 @@ function sendEventToSocket(socket, myEvent) {
     socket.write(JSON.stringify(myEvent) + "\n");
 }
 
+function cleanupNick(nick) {
+    const indexOfFirstNormalChar = nick.search(/[^_\W]/);
+    if (indexOfFirstNormalChar === -1) {
+        return nick;
+    }
+    const nickWithoutPrefix = nick.slice(indexOfFirstNormalChar);
+    const indexOfFirstSpecialChar = nickWithoutPrefix.search(/\W|_/);
+    return nickWithoutPrefix.slice(0, (indexOfFirstSpecialChar !== -1)? indexOfFirstSpecialChar : undefined);
+}
+
 function crash(msg) {
     console.log(msg);
     process.exit(1);
@@ -60,20 +70,23 @@ for (const botConfig of botConfigs.slice(1)) {
 var socketList = [];
 bots.forEach(botConfig => {
     var bot = new Irc.Client();
+    botConfig.bot = bot;
     bot.use((c, rawEvents, parsedEvents) => {
         parsedEvents.use((command, event, client, next) => {
             // Two commands are sent for channels and private messages:
             // message and privmsg, and it always happens
             if (command !== "privmsg") {
                 const type = (command === "message")? (event.target === botConfig.botName)? "privateMessage" : "channelMsg"  : command;
-                const myEvent = {
-                    ...event,
-                    bot: botConfig.botName,
-                    type: type
-                };
-                socketList.forEach(socket => {
-                    sendEventToSocket(socket, myEvent);
-                });
+                if (command === "message" && bots.get(event.nick) === undefined) {
+                    const myEvent = {
+                        bot: botConfig.botName,
+                        type: type,
+                        event
+                    };
+                    socketList.forEach(socket => {
+                        sendEventToSocket(socket, myEvent);
+                    });
+                }
             }
             next();
         });
@@ -124,6 +137,7 @@ const server = net.createServer(function(socket) {
     });
     socket.on('service-command', (command) => {
         console.log("Got command " + JSON.stringify(command) + " from " + socket.remoteAddress);
+        bots.get(command.bot).bot[command.command](...command.params);
     });
     socketList.push(socket);
 });

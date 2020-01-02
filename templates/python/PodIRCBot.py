@@ -2,10 +2,9 @@ import sys, json
 
 def respond(event, msg):
     command = {
-        "type": event.get("type"),
-        "bot": event.get("bot"),
-        "channel": event.get("channel"),
-        "msg": msg
+        "command": "say",
+        "bot": event.bot,
+        "params": [event.event.target, msg]
     }
     print(json.dumps(command))
 

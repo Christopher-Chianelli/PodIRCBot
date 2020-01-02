@@ -2,4 +2,4 @@
 /services-configmap.properties
 /*.pod-irc-bot.yaml
 /docker-compose.properties
-.buildtime
+**/.*
