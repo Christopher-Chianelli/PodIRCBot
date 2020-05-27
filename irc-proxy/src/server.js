@@ -1,5 +1,6 @@
 const net = require('net');
 const Irc = require('irc-framework');
+const RequestBalancer = require('smart-request-balancer');
 
 function verifyBotConfig(botConfig) {
     var out = [];
@@ -68,8 +69,21 @@ for (const botConfig of botConfigs.slice(1)) {
 }
 
 var socketList = [];
+var seenMessageSet = new Set();
+var botJoinQueue = new RequestBalancer({
+    overall: { // Overall queue rates and limits
+        rate: 2, // bot joins
+        limit: 1 // per seconds
+    },
+    ignoreOverallOverheat: false
+});
+
 bots.forEach(botConfig => {
-    var bot = new Irc.Client();
+    var bot = new Irc.Client({
+        auto_reconnect: true,
+        auto_reconnect_wait: 4000,
+        auto_reconnect_max_retries: 3,
+    });
     botConfig.bot = bot;
     bot.use((c, rawEvents, parsedEvents) => {
         parsedEvents.use((command, event, client, next) => {
@@ -77,31 +91,56 @@ bots.forEach(botConfig => {
             // message and privmsg, and it always happens
             if (command !== "privmsg") {
                 const type = (command === "message")? (event.target === botConfig.botName)? "privateMessage" : "channelMsg"  : command;
-                if (command === "message" && bots.get(event.nick) === undefined) {
-                    const myEvent = {
-                        bot: botConfig.botName,
-                        type: type,
-                        event
-                    };
-                    socketList.forEach(socket => {
-                        sendEventToSocket(socket, myEvent);
-                    });
+                if (command === "message") {
+                    const messageKey = event.nick + "\n" + event.message + "\n" + event.target + "\n" + Math.floor(event.time / 100);
+                    if (!seenMessageSet.has(messageKey)) {
+                        seenMessageSet.add(messageKey);
+                        const prefix = (bots.get(event.nick) === undefined)? "" : "bot-"
+                        const myEvent = {
+                            bot: botConfig.botName,
+                            type: prefix + type,
+                            event
+                        };
+                        socketList.forEach(socket => {
+                            try {
+                                sendEventToSocket(socket, myEvent);
+                            }
+                            catch(err) {
+                                console.log(err)
+                            }
+                        });
+                        setTimeout(() => { seenMessageSet.delete(messageKey); }, 2000);
+                    }
                 }
             }
             next();
         });
     });
-    bot.connect({
-        host: ircServer,
-        port: ircPort,
-        nick: botConfig.botName,
-        username: botConfig.botName,
-        gecos: botConfig.botName
-    });
+
+    botJoinQueue.request(retry => {
+        return new Promise((resolve, reject) => {
+            bot.connect({
+                host: ircServer,
+                port: ircPort,
+                nick: botConfig.botName,
+                username: botConfig.botName,
+                gecos: botConfig.botName
+            });
+            resolve(0);
+        });
+    }, 0);
 
     bot.on('registered', () => {
         console.log(`Bot ${botConfig.botName} has registered`);
         botConfig.botChannels.forEach(channel => bot.join(channel));
+    });
+
+    bot.on('invite', e => {
+        console.log(`${botConfig.botName} was invited to ${e.channel}.`);
+        if (botConfig.botChannels.indexOf(e.channel) !== -1) {
+            console.log(`${e.channel} in channelList; joining.`);
+            bot.join(e.channel);
+        }
     });
 
 });
@@ -135,9 +174,20 @@ const server = net.createServer(function(socket) {
             n = backlog.indexOf('\n')
         }
     });
+    var queue = new RequestBalancer({
+        overall: { // Overall queue rates and limits
+            rate: 5, // messages sent
+            limit: 2 // per seconds
+        },
+        ignoreOverallOverheat: false
+    });
     socket.on('service-command', (command) => {
-        console.log("Got command " + JSON.stringify(command) + " from " + socket.remoteAddress);
-        bots.get(command.bot).bot[command.command](...command.params);
+        queue.request(retry => {
+            return new Promise((resolve, reject) => {
+                bots.get(command.bot).bot[command.command](...command.params);
+                resolve(0);
+            });
+        }, 0);
     });
     socketList.push(socket);
 });

@@ -4,7 +4,8 @@
     "description": "A better IRC framework for node.js",
 
     "dependencies": {
-        "irc-framework": "^4.5.2"
+        "irc-framework": "^4.5.2",
+        "smart-request-balancer": "2.0.0"
     },
 
     "keywords": [

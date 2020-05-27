@@ -3,3 +3,8 @@
 /*.pod-irc-bot.yaml
 /docker-compose.properties
 **/.*
+
+# Ignore everything except certain directories
+/*/**
+!/irc-proxy
+!/templates

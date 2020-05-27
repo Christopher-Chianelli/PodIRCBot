@@ -24,7 +24,7 @@ fi
 $COMPOSE -f docker-compose.pod-irc-bot.yaml down
 
 SERVICE_TEMPLATE=`cat docker-compose.pod-irc-bot.template.yaml | perl -ne '(/#TEMPLATE_START/../#TEMPLATE_END/) && print' | perl -pe 's/.*(#TEMPLATE_START.*)/$1/' | perl -pe 's/(.*#TEMPLATE_END).*/$1/' | sed '1d; $d; s/^ *//' | sed 's/#//' | tr '\n' '&'`
-POD_CONFIG=`tr '\n' '&' < docker-compose.pod-irc-bot.template.yaml`
+POD_CONFIG=`sed '/#TEMPLATE_START/q' docker-compose.pod-irc-bot.template.yaml | tr '\n' '&'`
 echo -n "botConfigs=[{}" > services-configmap.properties
 echo "OPENSHIFT_BUILD_NAMESPACE=docker-compose" > docker-compose.properties
 tmpfile=$(mktemp /tmp/pod-irc-bot-build.XXXXXX)
@@ -64,6 +64,7 @@ done
 echo "]" >> services-configmap.properties
 cat $tmpfile | tr '&' '\n' > docker-compose.pod-irc-bot.yaml
 rm $tmpfile
+sed -ne '/^#TEMPLATE_END$/{:a' -e 'n;p;ba' -e '}' docker-compose.pod-irc-bot.template.yaml >> docker-compose.pod-irc-bot.yaml
 
 $COMPOSE -f docker-compose.pod-irc-bot.yaml up -d
 echo "Build Successful!"

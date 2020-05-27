@@ -9,3 +9,19 @@ services:
 #    - services-configmap.properties
 #    - docker-compose.properties
 #TEMPLATE_END
+  redis:
+    image: redis:4.0.5-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    hostname: redis
+    #networks:
+    #  - redis-net
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+#networks:
+#  redis-net:
+
+volumes:
+  redis-data:
